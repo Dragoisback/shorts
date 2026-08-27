@@ -5,6 +5,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.media3.ui.PlayerView
 import androidx.recyclerview.widget.RecyclerView
 
@@ -21,6 +24,20 @@ class ShortsAdapter(
         val playerView: PlayerView = view.findViewById(R.id.player_view)
         val title: TextView = view.findViewById(R.id.video_title)
         val playIcon: ImageView = view.findViewById(R.id.play_icon)
+
+        init {
+            // Keep the title clear of the gesture bar / navigation bar on edge-to-edge
+            // devices (Android 15+ draws the page behind them).
+            val basePaddingBottom = title.paddingBottom
+            ViewCompat.setOnApplyWindowInsetsListener(view) { _, insets ->
+                val bars = insets.getInsets(
+                    WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+                )
+                title.updatePadding(bottom = basePaddingBottom + bars.bottom)
+                insets
+            }
+            ViewCompat.requestApplyInsets(view)
+        }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PageHolder {

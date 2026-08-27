@@ -1,8 +1,8 @@
 name: Build APK
 
-# Copy this file to .github/workflows/build.yml to enable automatic APK builds.
-# Every push builds a signed release APK and attaches it to the GitHub release
-# (tag RELEASE_TAG below, created automatically if it does not exist yet).
+# Builds a signed release APK on every push (including the merge of a PR into
+# main) and publishes it to a GitHub release. See ci/README.md for the one-time
+# repository settings this needs.
 
 on:
   push:
@@ -13,12 +13,17 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: build-apk-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
-  RELEASE_TAG: v1.0.0
+  RELEASE_TAG: v1.1.0
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -63,6 +68,7 @@ jobs:
 
       - name: Collect APK
         run: |
+          set -e
           mkdir -p dist
           TAG="${{ github.ref_type == 'tag' && github.ref_name || env.RELEASE_TAG }}"
           echo "TAG=$TAG" >> $GITHUB_ENV
