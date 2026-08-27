@@ -31,8 +31,10 @@ Requires JDK 17 and the Android SDK (or just open the project in Android Studio)
 ./gradlew assembleRelease    # signed if SHORTS_KEYSTORE* env vars are set
 ```
 
-CI (`.github/workflows/build.yml`) builds a release APK on every push and attaches it to a
-GitHub release whenever a `v*` tag is pushed.
+CI lives in [`ci/build-apk.yml`](ci/build-apk.yml). Copy it to `.github/workflows/build.yml`
+(see [`ci/README.md`](ci/README.md) — GitHub blocks automation accounts from writing workflow
+files) and every push will build a signed release APK and attach it to the
+[v1.0.0 release](https://github.com/Dragoisback/shorts/releases/tag/v1.0.0).
 
 ### Signing
 

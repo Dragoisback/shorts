@@ -1,5 +1,9 @@
 name: Build APK
 
+# Copy this file to .github/workflows/build.yml to enable automatic APK builds.
+# Every push builds a signed release APK and attaches it to the GitHub release
+# (tag RELEASE_TAG below, created automatically if it does not exist yet).
+
 on:
   push:
     branches: [ "**" ]
@@ -8,6 +12,9 @@ on:
 
 permissions:
   contents: write
+
+env:
+  RELEASE_TAG: v1.0.0
 
 jobs:
   build:
@@ -25,13 +32,18 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Prepare signing keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.SHORTS_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.SHORTS_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.SHORTS_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.SHORTS_KEY_PASSWORD }}
         run: |
           set -e
-          if [ -n "${{ secrets.SHORTS_KEYSTORE_BASE64 }}" ]; then
-            echo "${{ secrets.SHORTS_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/shorts.jks"
-            echo "SHORTS_KEYSTORE_PASSWORD=${{ secrets.SHORTS_KEYSTORE_PASSWORD }}" >> $GITHUB_ENV
-            echo "SHORTS_KEY_ALIAS=${{ secrets.SHORTS_KEY_ALIAS }}" >> $GITHUB_ENV
-            echo "SHORTS_KEY_PASSWORD=${{ secrets.SHORTS_KEY_PASSWORD }}" >> $GITHUB_ENV
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/shorts.jks"
+            echo "SHORTS_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> $GITHUB_ENV
+            echo "SHORTS_KEY_ALIAS=$KEY_ALIAS" >> $GITHUB_ENV
+            echo "SHORTS_KEY_PASSWORD=$KEY_PASSWORD" >> $GITHUB_ENV
           else
             keytool -genkeypair -v \
               -keystore "$RUNNER_TEMP/shorts.jks" \
@@ -47,10 +59,12 @@ jobs:
       - name: Build release APK
         run: ./gradlew --no-daemon assembleRelease
 
-      - name: Rename APK
+      - name: Collect APK
         run: |
           mkdir -p dist
-          cp app/build/outputs/apk/release/app-release.apk dist/shorts-${{ github.ref_type == 'tag' && github.ref_name || 'dev' }}.apk
+          TAG="${{ github.ref_type == 'tag' && github.ref_name || env.RELEASE_TAG }}"
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          cp app/build/outputs/apk/release/app-release.apk "dist/shorts-$TAG.apk"
           ls -l dist
 
       - name: Upload build artifact
@@ -59,18 +73,14 @@ jobs:
           name: shorts-apk
           path: dist/*.apk
 
-      - name: Publish GitHub release
-        if: github.ref_type == 'tag'
+      - name: Publish to GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ github.ref_name }}" dist/*.apk \
-            --title "Shorts ${{ github.ref_name }}" \
-            --notes "Local Shorts player.
-
-          Install the APK on your Android phone (allow installs from unknown sources), open the app, pick the folder that holds your videos and swipe up/down like YouTube Shorts.
-
-          - Vertical swipe feed of every video in the chosen folder (sub-folders included)
-          - Videos loop, tap to pause/resume, mute toggle
-          - Folder choice is remembered between launches" \
-            || gh release upload "${{ github.ref_name }}" dist/*.apk --clobber
+          set -e
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" \
+              --title "Shorts $TAG" \
+              --notes "Local Shorts player - pick a folder, swipe through your videos."
+          fi
+          gh release upload "$TAG" dist/*.apk --clobber
