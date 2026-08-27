@@ -12,7 +12,12 @@ pick a folder once, then swipe up and down through every video inside it.
 - **Loops automatically**, tap to pause/resume, mute toggle, position counter.
 - **Remembers your folder** across launches (persisted URI permission), no storage permission
   prompts and no file copying.
-- Supports mp4, mkv, webm, mov, 3gp, avi, ts and anything else ExoPlayer can decode.
+- Plays mp4, mkv, webm, mov, 3gp, ts and anything else ExoPlayer can decode; files it can't
+  decode (e.g. AVI/FLV) are skipped automatically instead of freezing the feed.
+- Built for modern Pixels: targets **Android 16 (API 36)** — the OS the Pixel 10a ships with —
+  with proper edge-to-edge layout (status bar, gesture bar and punch-hole cutout handled),
+  screen stays awake while watching, audio focus and headphone-unplug handling.
+- Runs on Android 6.0 (API 23) and up.
 
 ## Install
 
@@ -21,6 +26,13 @@ Download the latest `shorts-*.apk` from the
 install it (you'll need to allow "install unknown apps" for your browser/file manager).
 
 Then: open **Shorts** → *Choose video folder* → select your videos folder → swipe.
+
+## APK releases
+
+`.github/workflows/build.yml` builds a signed release APK on every push (including PR merges)
+and publishes it to the [v1.1.0 release](https://github.com/Dragoisback/shorts/releases/tag/v1.1.0).
+One-time setup and optional stable-signing secrets are described in
+[`ci/README.md`](ci/README.md).
 
 ## Build it yourself
 
@@ -31,24 +43,11 @@ Requires JDK 17 and the Android SDK (or just open the project in Android Studio)
 ./gradlew assembleRelease    # signed if SHORTS_KEYSTORE* env vars are set
 ```
 
-CI lives in [`ci/build-apk.yml`](ci/build-apk.yml). Copy it to `.github/workflows/build.yml`
-(see [`ci/README.md`](ci/README.md) — GitHub blocks automation accounts from writing workflow
-files) and every push will build a signed release APK and attach it to the
-[v1.0.0 release](https://github.com/Dragoisback/shorts/releases/tag/v1.0.0).
-
 ### Signing
 
-The workflow signs with a throwaway keystore unless you add these repository secrets:
-
-| Secret | Meaning |
-| --- | --- |
-| `SHORTS_KEYSTORE_BASE64` | base64 of your `.jks` keystore |
-| `SHORTS_KEYSTORE_PASSWORD` | keystore password |
-| `SHORTS_KEY_ALIAS` | key alias |
-| `SHORTS_KEY_PASSWORD` | key password |
-
-Without them each release is signed with a different key, so uninstall the old version before
-installing a newer one.
+The workflow signs with a throwaway keystore unless you add the repository secrets listed in
+[`ci/README.md`](ci/README.md). Without them each release is signed with a different key, so
+uninstall the old version before installing a newer one.
 
 ## Project layout
 

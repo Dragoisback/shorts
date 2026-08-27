@@ -8,5 +8,8 @@
     <string name="counter_format">%1$d / %2$d</string>
     <string name="empty_hint">Pick a folder on your device and every video inside it (including sub-folders) becomes a short. Swipe up and down to browse.</string>
     <string name="empty_folder">No videos found in that folder. Pick another one.</string>
+    <string name="folder_inaccessible">Can\'t read that folder anymore — the permission may have been revoked or the storage was removed. Please pick it again.</string>
+    <string name="unplayable_skip">Can\'t play this video — skipping</string>
+    <string name="unplayable_batch">These videos can\'t be played on this device</string>
     <string name="no_picker">No folder picker available on this device.</string>
 </resources>
